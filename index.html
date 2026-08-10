@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ターゲット1900</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f2f4f7;
+  min-height: 100vh;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  background: white;
+  padding: 50px 25px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 32px;
+  margin: 10px 0 40px;
+}
+
+p {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 18px;
+  font-size: 22px;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+button {
+  width: 100%;
+  padding: 20px;
+  font-size: 22px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+#word {
+  min-height: 65vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+#word div {
+  font-size: 22px;
+  margin-bottom: 25px;
+}
+
+#word h2 {
+  font-size: 56px;
+  margin: 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <h1>ターゲット1900</h1>
+
+  <div id="startScreen">
+
+    <p>開始番号</p>
+    <input id="startNumber" type="number" value="1" min="1">
+
+    <p>終了番号</p>
+    <input id="endNumber" type="number" value="40" min="1">
+
+    <button id="startButton">スタート</button>
+    <button id="listButton">単語一覧</button>
+    <button id="wrongListButton">間違えた単語</button>
+
+  </div>
+
+  <div id="quizScreen" style="display:none;">
+
+    <div id="word"></div>
+
+    <button id="wrongButton" style="display:none;">
+      間違えた
+    </button>
+
+  </div>
+
+  <div id="listScreen" style="display:none;">
+
+    <h2>単語一覧</h2>
+
+    <div id="wordList"></div>
+<button id="wrongQuizButton">間違えた単語だけで練習</button>
+    <button id="backButton">戻る</button>
+
+  </div>
+
+</div>
+
+<script>
+
+const words = [
+
+  ["create", "創り出す"],
+  ["increase", "増加する"],
+  ["improve", "向上させる"],
+  ["mean", "意味する"],
+  ["own", "所有している"],
+  ["include", "含む"],
+  ["consider", "見なす"],
+  ["allow", "許す"],
+  ["suggest", "提案する"],
+  ["produce", "生産する"],
+  ["decide", "決める"],
+  ["offer", "提供する"],
+  ["require", "要求する"],
+  ["share", "共有する"],
+  ["store", "保存する"],
+  ["tend", "傾向がある"],
+  ["concern", "心配している"],
+  ["describe", "述べる、説明する"],
+  ["involve", "関与させる"],
+  ["reduce", "減らす"],
+
+  ["design", "設計する"],
+  ["force", "強いる"],
+  ["limit", "制限[規制]する"],
+  ["bear", "耐える"],
+  ["affect", "影響を及ぼす"],
+  ["deal", "処理する"],
+  ["avoid", "避ける"],
+  ["relate", "関連づける"],
+  ["realize", "気づく"],
+  ["encourage", "奨励する"],
+  ["compare", "比較する"],
+  ["measure", "測る"],
+  ["exist", "存在する"],
+  ["mark", "印をつける"],
+  ["challenge", "異議を唱える"],
+  ["depend", "頼る"],
+  ["object", "反対する"],
+  ["demand", "要求する"],
+  ["found", "設立する"],
+  ["complete", "完成させる、仕上げる"]
+
+];
+
+let remainingWords = [];
+let currentWord = 0;
+let showingJapanese = false;
+let wrongWords = [];
+let practicingWrongWords = false;
+let answeredWrong = false;
+const startScreen = document.getElementById("startScreen");
+const quizScreen = document.getElementById("quizScreen");
+const startButton = document.getElementById("startButton");
+const word = document.getElementById("word");
+const listButton = document.getElementById("listButton");
+const listScreen = document.getElementById("listScreen");
+const wordList = document.getElementById("wordList");
+const backButton = document.getElementById("backButton");
+const wrongButton = document.getElementById("wrongButton");
+const wrongListButton = document.getElementById("wrongListButton");
+const wrongQuizButton = document.getElementById("wrongQuizButton");
+
+startButton.onclick = function() {
+
+  const start = Number(
+    document.getElementById("startNumber").value
+  );
+
+  const end = Number(
+    document.getElementById("endNumber").value
+  );
+
+  if (
+    start < 1 ||
+    end > words.length ||
+    start > end
+  ) {
+
+    alert(
+      "1〜" + words.length +
+      "の範囲で指定してください！"
+    );
+
+    return;
+  }
+
+  remainingWords = words
+    .map(function(item, index) {
+
+      return [
+        item[0],
+        item[1],
+        index + 1
+      ];
+
+    })
+    .slice(start - 1, end);
+
+
+  startScreen.style.display = "none";
+  quizScreen.style.display = "block";
+
+  showNextWord();
+
+};
+
+function showNextWord() {
+if (remainingWords.length === 0) {
+
+  word.innerHTML =
+    "<h2>終了！</h2>";
+
+  wrongButton.style.display = "none";
+
+  word.onclick = function() {
+
+    quizScreen.style.display = "none";
+    listScreen.style.display = "block";
+
+    wordList.innerHTML = "";
+
+    wrongWords.forEach(function(item) {
+
+      const div =
+        document.createElement("div");
+
+      div.innerHTML =
+        "<strong>No. " +
+        item[2] +
+        "</strong><br>" +
+        item[0] +
+        "<br>" +
+        item[1] +
+        "<hr>";
+
+      wordList.appendChild(div);
+
+    });
+
+  };
+
+  return;
+}
+  
+  currentWord =
+    Math.floor(
+      Math.random() *
+      remainingWords.length
+    );
+
+  const item =
+    remainingWords[currentWord];
+
+  word.innerHTML =
+    "<div>No. " +
+    item[2] +
+    "</div>" +
+
+    "<h2>" +
+    item[0] +
+    "</h2>";
+
+  showingJapanese = false;
+answeredWrong = false;
+  wrongButton.style.display = "none";
+  wrongButton.textContent = "間違えた";
+
+}
+
+
+word.onclick = function() {
+
+  if (remainingWords.length === 0) {
+
+  if (practicingWrongWords) {
+    return;
+  }
+
+  quizScreen.style.display = "none";
+  startScreen.style.display = "block";
+
+  return;
+}
+
+  if (!showingJapanese) {
+
+    const item =
+      remainingWords[currentWord];
+
+    word.innerHTML =
+      "<div>No. " +
+      item[2] +
+      "</div>" +
+
+      "<h2>" +
+      item[1] +
+      "</h2>";
+
+    showingJapanese = true;
+
+    wrongButton.style.display = "block";
+
+  }
+else {
+
+  if (practicingWrongWords) {
+
+    const correctWord =
+      remainingWords[currentWord];
+
+    wrongWords = wrongWords.filter(function(item) {
+
+      return item[0] !== correctWord[0];
+
+    });
+
+  }
+
+  remainingWords.splice(
+    currentWord,
+    1
+  );
+
+  showNextWord();
+
+}
+
+
+};
+
+wrongButton.onclick = function() {
+
+  const item =
+    remainingWords[currentWord];
+
+  if (!wrongWords.includes(item)) {
+
+    wrongWords.push(item);
+
+  }
+
+  answeredWrong = true;
+
+  wrongButton.textContent = "記録済み";
+
+};
+
+listButton.onclick = function() {
+
+  startScreen.style.display = "none";
+  quizScreen.style.display = "none";
+  listScreen.style.display = "block";
+
+  wordList.innerHTML = "";
+
+  words.forEach(function(item, index) {
+
+    const div =
+      document.createElement("div");
+
+    div.innerHTML =
+      "<strong>No. " +
+      (index + 1) +
+      "</strong><br>" +
+      item[0] +
+      "<br>" +
+      item[1] +
+      "<hr>";
+
+    wordList.appendChild(div);
+
+  });
+
+};
+
+wrongQuizButton.onclick = function() {
+
+  if (wrongWords.length === 0) {
+
+    alert("まだ間違えた単語がありません！");
+
+    return;
+  }
+  remainingWords = wrongWords.slice();
+practicingWrongWords = true;
+word.onclick = function() {
+
+  if (!showingJapanese) {
+
+    const item =
+      remainingWords[currentWord];
+
+    word.innerHTML =
+      "<div>No. " +
+      item[2] +
+      "</div>" +
+
+      "<h2>" +
+      item[1] +
+      "</h2>";
+
+    showingJapanese = true;
+    wrongButton.style.display = "block";
+
+  }
+
+else {
+
+  if (practicingWrongWords && !answeredWrong) {
+
+  const correctWord =
+    remainingWords[currentWord];
+
+  wrongWords = wrongWords.filter(function(item) {
+
+    return item[0] !== correctWord[0];
+
+  });
+
+}
+
+  remainingWords.splice(
+    currentWord,
+    1
+  );
+
+  showNextWord();
+
+}
+
+};
+  listScreen.style.display = "none";
+  startScreen.style.display = "none";
+  quizScreen.style.display = "block";
+
+  showNextWord();
+
+};
+wrongListButton.onclick = function() {
+
+  startScreen.style.display = "none";
+  quizScreen.style.display = "none";
+  listScreen.style.display = "block";
+wordList.innerHTML = "";
+
+wrongWords.forEach(function(item) {
+
+  const div = document.createElement("div");
+
+  div.innerHTML =
+    "<strong>No. " + item[2] + "</strong><br>" +
+    item[0] + "<br>" +
+    item[1] +
+    "<hr>";
+
+  wordList.appendChild(div);
+
+});
+};
+
+
+backButton.onclick = function() {
+
+  listScreen.style.display = "none";
+  startScreen.style.display = "block";
+
+};
+
+</script>
+
+</body>
+</html>
