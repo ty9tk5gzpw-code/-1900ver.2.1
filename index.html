@@ -77,6 +77,35 @@ button {
   font-size: 56px;
   margin: 0;
 }
+#wordList div {
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  min-height: 55px;
+  border-bottom: 1px solid #ddd;
+}
+
+#wordList strong {
+  width: 60px;
+  text-align: center;
+}
+
+#wordList span:nth-of-type(1) {
+  width: 180px;
+  text-align: left;
+  font-weight: bold;
+}
+
+#wordList span:nth-of-type(2) {
+  flex: 1;
+  text-align: left;
+}
+
+#wordList hr {
+  display: none;
+}
+
+
 </style>
 </head>
 
@@ -386,14 +415,16 @@ listButton.onclick = function() {
     const div =
       document.createElement("div");
 
-    div.innerHTML =
-      "<strong>No. " +
-      (index + 1) +
-      "</strong><br>" +
-      item[0] +
-      "<br>" +
-      item[1] +
-      "<hr>";
+ div.innerHTML =
+  "<strong>" +
+  (index + 1) +
+  "</strong>" +
+  "<span>" +
+  item[0] +
+  "</span>" +
+  "<span>" +
+  item[1] +
+  "</span>";
 
     wordList.appendChild(div);
 
