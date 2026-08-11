@@ -142,7 +142,7 @@ button {
   <div id="listScreen" style="display:none;">
 
     <h2>単語一覧</h2>
-  <button onclick="showHome()">← 戻る</button>  
+<button onclick="showHome()">← 戻る</button>
 
     <div id="wordList"></div>
 <button id="wrongQuizButton">間違えた単語だけで練習</button>
@@ -2386,7 +2386,10 @@ backButton.onclick = function() {
   startScreen.style.display = "block";
 
 };
-
+document.getElementById("topBackButton").addEventListener("click", function() {
+  document.getElementById("listScreen").style.display = "none";
+  document.getElementById("startScreen").style.display = "block";
+});
 </script>
 
 </body>
