@@ -2064,9 +2064,13 @@ const words = [
 let remainingWords = [];
 let currentWord = 0;
 let showingJapanese = false;
-let wrongWords = [];
+let wrongWords =
+  JSON.parse(
+    localStorage.getItem("wrongWords")
+  ) || [];
 let practicingWrongWords = false;
 let answeredWrong = false;
+
 const startScreen = document.getElementById("startScreen");
 const quizScreen = document.getElementById("quizScreen");
 const startButton = document.getElementById("startButton");
@@ -2078,6 +2082,12 @@ const backButton = document.getElementById("backButton");
 const wrongButton = document.getElementById("wrongButton");
 const wrongListButton = document.getElementById("wrongListButton");
 const wrongQuizButton = document.getElementById("wrongQuizButton");
+const topBackButton = document.getElementById("topBackButton");
+
+
+// =========================
+// 新しい範囲をスタート
+// =========================
 
 startButton.onclick = function() {
 
@@ -2103,6 +2113,12 @@ startButton.onclick = function() {
     return;
   }
 
+  // 新しい範囲なので通常モードに戻す
+  practicingWrongWords = false;
+  answeredWrong = false;
+  showingJapanese = false;
+
+  // 新しい範囲を作り直す
   remainingWords = words
     .map(function(item, index) {
 
@@ -2115,52 +2131,60 @@ startButton.onclick = function() {
     })
     .slice(start - 1, end);
 
-
   startScreen.style.display = "none";
+  listScreen.style.display = "none";
   quizScreen.style.display = "block";
 
   showNextWord();
-
 };
 
+
+// =========================
+// 次の単語を表示
+// =========================
+
 function showNextWord() {
-if (remainingWords.length === 0) {
 
-  word.innerHTML =
-    "<h2>終了！</h2>";
+  // 全部終わった
+  if (remainingWords.length === 0) {
 
-  wrongButton.style.display = "none";
+    word.innerHTML =
+      "<h2>終了！</h2>";
 
-  word.onclick = function() {
+    wrongButton.style.display = "none";
 
-    quizScreen.style.display = "none";
-    listScreen.style.display = "block";
+    word.onclick = function() {
 
-    wordList.innerHTML = "";
+      quizScreen.style.display = "none";
+      listScreen.style.display = "block";
 
-    wrongWords.forEach(function(item) {
+      wordList.innerHTML = "";
 
-      const div =
-        document.createElement("div");
+      wrongWords.forEach(function(item) {
 
-      div.innerHTML =
-        "<strong>No. " +
-        item[2] +
-        "</strong><br>" +
-        item[0] +
-        "<br>" +
-        item[1] +
-        "<hr>";
+        const div =
+          document.createElement("div");
 
-      wordList.appendChild(div);
+        div.innerHTML =
+          "<strong>No. " +
+          item[2] +
+          "</strong><br>" +
+          item[0] +
+          "<br>" +
+          item[1] +
+          "<hr>";
 
-    });
+        wordList.appendChild(div);
 
-  };
+      });
 
-  return;
-}
-  
+    };
+
+    return;
+  }
+
+
+  // ランダムに単語を選ぶ
   currentWord =
     Math.floor(
       Math.random() *
@@ -2170,6 +2194,8 @@ if (remainingWords.length === 0) {
   const item =
     remainingWords[currentWord];
 
+
+  // 英語を表示
   word.innerHTML =
     "<div>No. " +
     item[2] +
@@ -2180,31 +2206,36 @@ if (remainingWords.length === 0) {
     "</h2>";
 
   showingJapanese = false;
-answeredWrong = false;
+  answeredWrong = false;
+
   wrongButton.style.display = "none";
   wrongButton.textContent = "間違えた";
 
+
+  // ★★★★★ ここが今回の重要部分 ★★★★★
+  // 新しい単語が表示されたら、
+  // 必ず通常のクリック処理に戻す
+
+  word.onclick = normalWordClick;
 }
 
 
-word.onclick = function() {
+// =========================
+// 通常の単語クリック
+// =========================
+
+function normalWordClick() {
 
   if (remainingWords.length === 0) {
-
-  if (practicingWrongWords) {
     return;
   }
 
-  quizScreen.style.display = "none";
-  startScreen.style.display = "block";
+  const item =
+    remainingWords[currentWord];
 
-  return;
-}
 
+  // 英語 → 日本語
   if (!showingJapanese) {
-
-    const item =
-      remainingWords[currentWord];
 
     word.innerHTML =
       "<div>No. " +
@@ -2219,50 +2250,95 @@ word.onclick = function() {
 
     wrongButton.style.display = "block";
 
+    return;
   }
-else {
 
-  if (practicingWrongWords) {
+
+  // 日本語 → 次の単語
+
+  // 間違えた単語練習中で、
+  // 「間違えた」を押していなかったら正解
+  if (
+    practicingWrongWords &&
+    !answeredWrong
+  ) {
 
     const correctWord =
       remainingWords[currentWord];
 
-    wrongWords = wrongWords.filter(function(item) {
+    wrongWords =
+      wrongWords.filter(function(item) {
 
-      return item[0] !== correctWord[0];
+        return item[0] !== correctWord[0];
 
-    });
+      });
+    localStorage.setItem(
+  "wrongWords",
+  JSON.stringify(wrongWords)
+);
 
   }
 
+
+  // 今の単語を削除
   remainingWords.splice(
     currentWord,
     1
   );
 
   showNextWord();
-
 }
 
 
-};
+// =========================
+// 「間違えた」ボタン
+// =========================
 
 wrongButton.onclick = function() {
+
+  if (remainingWords.length === 0) {
+    return;
+  }
 
   const item =
     remainingWords[currentWord];
 
-  if (!wrongWords.includes(item)) {
 
-    wrongWords.push(item);
+  // すでに登録されていないか確認
+  const alreadyExists =
+    wrongWords.some(function(wrongItem) {
 
-  }
+      return wrongItem[0] === item[0];
+
+    });
+
+if (!alreadyExists) {
+
+  wrongWords.push([
+    item[0],
+    item[1],
+    item[2]
+  ]);
+
+  localStorage.setItem(
+    "wrongWords",
+    JSON.stringify(wrongWords)
+  );
+
+}
+  
+
 
   answeredWrong = true;
 
-  wrongButton.textContent = "記録済み";
-
+  wrongButton.textContent =
+    "記録済み";
 };
+
+
+// =========================
+// 単語一覧
+// =========================
 
 listButton.onclick = function() {
 
@@ -2277,16 +2353,18 @@ listButton.onclick = function() {
     const div =
       document.createElement("div");
 
- div.innerHTML =
-  "<strong>" +
-  (index + 1) +
-  "</strong>" +
-  "<span>" +
-  item[0] +
-  "</span>" +
-  "<span>" +
-  item[1] +
-  "</span>";
+    div.innerHTML =
+      "<strong>" +
+      (index + 1) +
+      "</strong>" +
+
+      "<span>" +
+      item[0] +
+      "</span>" +
+
+      "<span>" +
+      item[1] +
+      "</span>";
 
     wordList.appendChild(div);
 
@@ -2294,91 +2372,87 @@ listButton.onclick = function() {
 
 };
 
-wrongQuizButton.onclick = function() {
 
-  if (wrongWords.length === 0) {
+// =========================
+// 間違えた単語一覧
+// =========================
 
-    alert("まだ間違えた単語がありません！");
-
-    return;
-  }
-  remainingWords = wrongWords.slice();
-practicingWrongWords = true;
-word.onclick = function() {
-
-  if (!showingJapanese) {
-
-    const item =
-      remainingWords[currentWord];
-
-    word.innerHTML =
-      "<div>No. " +
-      item[2] +
-      "</div>" +
-
-      "<h2>" +
-      item[1] +
-      "</h2>";
-
-    showingJapanese = true;
-    wrongButton.style.display = "block";
-
-  }
-
-else {
-
-  if (practicingWrongWords && !answeredWrong) {
-
-  const correctWord =
-    remainingWords[currentWord];
-
-  wrongWords = wrongWords.filter(function(item) {
-
-    return item[0] !== correctWord[0];
-
-  });
-
-}
-
-  remainingWords.splice(
-    currentWord,
-    1
-  );
-
-  showNextWord();
-
-}
-
-};
-  listScreen.style.display = "none";
-  startScreen.style.display = "none";
-  quizScreen.style.display = "block";
-
-  showNextWord();
-
-};
 wrongListButton.onclick = function() {
 
   startScreen.style.display = "none";
   quizScreen.style.display = "none";
   listScreen.style.display = "block";
-wordList.innerHTML = "";
 
-wrongWords.forEach(function(item) {
+  wordList.innerHTML = "";
 
-  const div = document.createElement("div");
+  wrongWords.forEach(function(item) {
 
-  div.innerHTML =
-    "<strong>No. " + item[2] + "</strong><br>" +
-    item[0] + "<br>" +
-    item[1] +
-    "<hr>";
+    const div =
+      document.createElement("div");
 
-  wordList.appendChild(div);
+    div.innerHTML =
+      "<strong>" +
+      item[2] +
+      "</strong>" +
 
-});
+      "<span>" +
+      item[0] +
+      "</span>" +
+
+      "<span>" +
+      item[1] +
+      "</span>";
+
+    wordList.appendChild(div);
+
+  });
+
 };
 
+
+// =========================
+// 間違えた単語だけで練習
+// =========================
+
+wrongQuizButton.onclick = function() {
+
+  if (wrongWords.length === 0) {
+
+    alert(
+      "まだ間違えた単語がありません！"
+    );
+
+    return;
+  }
+
+
+  // 間違えた単語をコピー
+  remainingWords =
+    wrongWords.map(function(item) {
+
+      return [
+        item[0],
+        item[1],
+        item[2]
+      ];
+
+    });
+
+
+  practicingWrongWords = true;
+  answeredWrong = false;
+
+  listScreen.style.display = "none";
+  startScreen.style.display = "none";
+  quizScreen.style.display = "block";
+
+  showNextWord();
+};
+
+
+// =========================
+// 戻る
+// =========================
 
 backButton.onclick = function() {
 
@@ -2386,12 +2460,14 @@ backButton.onclick = function() {
   startScreen.style.display = "block";
 
 };
+
+
 topBackButton.onclick = function() {
 
   listScreen.style.display = "none";
   startScreen.style.display = "block";
 
-};
+};  
 </script>
 
 </body>
