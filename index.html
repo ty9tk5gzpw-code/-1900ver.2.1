@@ -126,26 +126,19 @@ button {
   font-size: 24px;
   background: transparent;
 }
-@media (max-width: 600px) {
+#quizScreen {
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  overflow: visible;
+}
 
-  #quizScreen {
-    width: 100%;
-    min-height: 100vh;
-  }
-
-  #word {
-    width: 100%;
-    min-height: 65vh;
-  }
-
-  #word h2 {
-    font-size: 56px;
-    max-width: 100%;
-  }
-
-  #word div {
-    font-size: 22px;
-  }
+#word {
+  width: 100%;
+  min-height: 65vh;
+  position: relative;
+  z-index: 1;
+}
 
 }
 </style>
