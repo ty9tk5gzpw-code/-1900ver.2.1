@@ -24,6 +24,7 @@ body {
   background: white;
   padding: 50px 25px;
   text-align: center;
+  position: relative;
 }
 
 h1 {
@@ -57,54 +58,74 @@ button {
   cursor: pointer;
   margin-bottom: 10px;
 }
-
-#word {
-  min-height: 65vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-}
-
-#word div {
-  font-size: 22px;
-  margin-bottom: 25px;
-}
-
-#word h2 {
-  font-size: 56px;
-  margin: 0;
-}
 #wordList div {
   display: flex;
   align-items: center;
-  font-size: 22px;
-  min-height: 55px;
+  width: 100%;
+  min-height: 65px;
+  padding: 10px 0;
   border-bottom: 1px solid #ddd;
+  font-size: 20px;
 }
 
 #wordList strong {
-  width: 60px;
+  width: 55px;
+  flex-shrink: 0;
   text-align: center;
 }
 
-#wordList span:nth-of-type(1) {
-  width: 180px;
+/* 単語一覧・苦手単語一覧 */
+#wordList span:nth-of-type(2) {
+  width: 170px;
+  flex-shrink: 0;
   text-align: left;
   font-weight: bold;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
-#wordList span:nth-of-type(2) {
+#wordList span:nth-of-type(3) {
   flex: 1;
+  min-width: 0;
   text-align: left;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  padding-left: 8px;
+}
+
+/* 間違えた単語一覧 */
+#wordList div:has(span:nth-of-type(2)):not(:has(span:nth-of-type(3))) span:nth-of-type(1) {
+  width: 170px;
+  flex-shrink: 0;
+  text-align: left;
+  font-weight: bold;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+#wordList div:has(span:nth-of-type(2)):not(:has(span:nth-of-type(3))) span:nth-of-type(2) {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  padding-left: 8px;
 }
 
 #wordList hr {
   display: none;
 }
 
+#difficultButton {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: auto;
+  padding: 5px 8px;
+  margin: 0;
+  font-size: 24px;
+  background: transparent;
+}
 
 </style>
 </head>
@@ -127,12 +148,14 @@ button {
   <button id="tenButton">範囲から10問</button>
   <button id="continueRangeButton">続きから10問</button>
     <button id="listButton">単語一覧</button>
+  <button id="difficultListButton">苦手単語</button>
     <button id="wrongListButton">間違えた単語</button>
 
   </div>
 <div id="quizScreen" style="display:none;">
 
   <div id="word"></div>
+  <button id="difficultButton">☆</button>
 <div id="progress"></div>
   <button id="wrongButton" style="display:none;">
     間違えた
@@ -153,7 +176,13 @@ button {
 <button id="topBackButton">← 戻る</button>
 
     <div id="wordList"></div>
-<button id="wrongQuizButton">間違えた単語だけで練習</button>
+<button id="wrongQuizButton" style="display:none;">
+  間違えた単語から10問
+</button>
+
+<button id="difficultQuizButton" style="display:none;">
+  苦手単語から10問
+</button>
     <button id="backButton">戻る</button>
 
   </div>
@@ -2071,13 +2100,18 @@ const words = [
 
 let remainingWords = [];
 let remainingRangeWords = [];
-
+let savedTenMode =
+  localStorage.getItem("tenMode") === "true";
 let currentWord = 0;
 let showingJapanese = false;
 
 let wrongWords =
   JSON.parse(
     localStorage.getItem("wrongWords")
+  ) || [];
+let difficultWords =
+  JSON.parse(
+    localStorage.getItem("difficultWords")
   ) || [];
 
 let practicingWrongWords = false;
@@ -2097,6 +2131,8 @@ const startButton =
 
 const word =
   document.getElementById("word");
+const difficultButton =
+  document.getElementById("difficultButton");
 const progress =
   document.getElementById("progress");
 const listButton =
@@ -2116,10 +2152,12 @@ const wrongButton =
 
 const wrongListButton =
   document.getElementById("wrongListButton");
-
+const difficultListButton =
+  document.getElementById("difficultListButton");
 const wrongQuizButton =
   document.getElementById("wrongQuizButton");
-
+const difficultQuizButton =
+  document.getElementById("difficultQuizButton");
 const topBackButton =
   document.getElementById("topBackButton");
 
@@ -2133,7 +2171,45 @@ const continueRangeButton =
 continueRangeButton.style.display = "none";
 const quizBackButton =
   document.getElementById("quizBackButton");
+difficultButton.onclick = function() {
 
+  const item =
+    remainingWords[currentWord];
+
+  if (!item) {
+    return;
+  }
+
+  const exists =
+    difficultWords.some(function(word) {
+      return word[0] === item[0];
+    });
+
+  if (exists) {
+
+    difficultWords =
+      difficultWords.filter(function(word) {
+        return word[0] !== item[0];
+      });
+
+    difficultButton.textContent = "☆";
+
+  } else {
+
+    difficultWords.push([
+      item[0],
+      item[1],
+      item[2]
+    ]);
+
+    difficultButton.textContent = "⭐";
+  }
+
+  localStorage.setItem(
+    "difficultWords",
+    JSON.stringify(difficultWords)
+  );
+};
 // =========================
 // 前回の範囲を読み込む
 // =========================
@@ -2143,7 +2219,27 @@ document.getElementById("startNumber").value =
 
 document.getElementById("endNumber").value =
   localStorage.getItem("endNumber") || 40;
+if (savedTenMode) {
 
+  tenStart =
+    Number(localStorage.getItem("tenStart"));
+
+  tenEnd =
+    Number(localStorage.getItem("tenEnd"));
+
+  remainingRangeWords =
+    JSON.parse(
+      localStorage.getItem("remainingRangeWords")
+    ) || [];
+
+  if (remainingRangeWords.length > 0) {
+
+    continueRangeButton.style.display =
+      "block";
+
+  }
+
+}
 
 // =========================
 // 新しい範囲をスタート
@@ -2319,6 +2415,13 @@ continueRangeButton.style.display =
 
   const item =
     remainingWords[currentWord];
+  const isDifficult =
+  difficultWords.some(function(word) {
+    return word[0] === item[0];
+  });
+
+difficultButton.textContent =
+  isDifficult ? "⭐" : "☆";
 if (tenMode) {
 
   const total =
@@ -2506,7 +2609,11 @@ wrongButton.onclick = function() {
 // =========================
 
 listButton.onclick = function() {
+wrongQuizButton.style.display =
+  "none";
 
+difficultQuizButton.style.display =
+  "none";
   startScreen.style.display =
     "none";
 
@@ -2524,21 +2631,60 @@ listButton.onclick = function() {
 
     const div =
       document.createElement("div");
+const isDifficult =
+  difficultWords.some(function(word) {
+    return word[0] === item[0];
+  });
+div.innerHTML =
+  "<strong>" +
+  (index + 1) +
+  "</strong>" +
 
+  "<span>" +
+  (isDifficult ? "⭐" : "☆") +
+  "</span>" +
 
-    div.innerHTML =
-      "<strong>" +
-      (index + 1) +
-      "</strong>" +
+  "<span>" +
+  item[0] +
+  "</span>" +
 
-      "<span>" +
-      item[0] +
-      "</span>" +
+  "<span>" +
+  item[1] +
+  "</span>";
+div.children[1].onclick =
+  function() {
 
-      "<span>" +
-      item[1] +
-      "</span>";
+    const exists =
+      difficultWords.some(function(word) {
+        return word[0] === item[0];
+      });
 
+    if (exists) {
+
+      difficultWords =
+        difficultWords.filter(function(word) {
+          return word[0] !== item[0];
+        });
+
+    } else {
+
+      difficultWords.push([
+        item[0],
+        item[1],
+        index + 1
+      ]);
+
+    }
+
+    localStorage.setItem(
+      "difficultWords",
+      JSON.stringify(difficultWords)
+    );
+
+    // 一覧を更新
+    listButton.onclick();
+
+  };
 
     wordList.appendChild(div);
 
@@ -2555,7 +2701,11 @@ wrongListButton.onclick = function() {
 
   startScreen.style.display =
     "none";
+difficultQuizButton.style.display =
+  "none";
 
+wrongQuizButton.style.display =
+  "block";
   quizScreen.style.display =
     "none";
 
@@ -2591,12 +2741,56 @@ wrongListButton.onclick = function() {
   });
 
 };
+// =========================
+// 苦手単語一覧
+// =========================
 
+difficultListButton.onclick = function() {
+wrongQuizButton.style.display =
+  "none";
+
+difficultQuizButton.style.display =
+  "block";
+  startScreen.style.display =
+    "none";
+
+  quizScreen.style.display =
+    "none";
+
+  listScreen.style.display =
+    "block";
+
+  wordList.innerHTML = "";
+
+  difficultWords.forEach(function(item) {
+
+    const div =
+      document.createElement("div");
+
+    div.innerHTML =
+      "<strong>" +
+      item[2] +
+      "</strong>" +
+
+      "<span>⭐</span>" +
+
+      "<span>" +
+      item[0] +
+      "</span>" +
+
+      "<span>" +
+      item[1] +
+      "</span>";
+
+    wordList.appendChild(div);
+
+  });
+
+};
 
 // =========================
 // 間違えた単語だけで練習
 // =========================
-
 wrongQuizButton.onclick = function() {
 
   if (wrongWords.length === 0) {
@@ -2608,27 +2802,27 @@ wrongQuizButton.onclick = function() {
     return;
   }
 
-
+  // 間違えた単語から10問作る
   remainingWords =
-    wrongWords.map(function(item) {
-
-      return [
-        item[0],
-        item[1],
-        item[2]
-      ];
-
-    });
-
+    wrongWords
+      .slice()
+      .sort(function() {
+        return Math.random() - 0.5;
+      })
+      .slice(
+        0,
+        Math.min(10, wrongWords.length)
+      );
 
   practicingWrongWords = true;
   answeredWrong = false;
   tenMode = false;
 
-
   continueTenButton.style.display =
     "none";
 
+  continueRangeButton.style.display =
+    "none";
 
   listScreen.style.display =
     "none";
@@ -2639,12 +2833,80 @@ wrongQuizButton.onclick = function() {
   quizScreen.style.display =
     "block";
 
-
   showNextWord();
 
 };
+// =========================
+// 間違えた単語から次の10問
+// =========================
 
+function makeNextWrongTen() {
 
+  remainingWords =
+    wrongWords
+      .slice()
+      .sort(function() {
+        return Math.random() - 0.5;
+      })
+      .slice(
+        0,
+        Math.min(10, wrongWords.length)
+      );
+
+  currentWord = 0;
+  showingJapanese = false;
+  answeredWrong = false;
+
+}
+// =========================
+// 苦手単語から10問
+// =========================
+
+difficultQuizButton.onclick =
+  function() {
+
+    if (difficultWords.length === 0) {
+
+      alert(
+        "まだ苦手単語がありません！"
+      );
+
+      return;
+    }
+
+    remainingWords =
+      difficultWords
+        .slice()
+        .sort(function() {
+          return Math.random() - 0.5;
+        })
+        .slice(
+          0,
+          Math.min(10, difficultWords.length)
+        );
+
+    practicingWrongWords = false;
+    answeredWrong = false;
+    tenMode = false;
+
+    continueTenButton.style.display =
+      "none";
+
+    continueRangeButton.style.display =
+      "none";
+
+    listScreen.style.display =
+      "none";
+
+    startScreen.style.display =
+      "none";
+
+    quizScreen.style.display =
+      "block";
+
+    showNextWord();
+
+  };
 // =========================
 // 戻る
 // =========================
@@ -2726,6 +2988,20 @@ tenButton.onclick = function() {
 
   tenStart = start;
   tenEnd = end;
+  localStorage.setItem(
+  "tenStart",
+  start
+);
+
+localStorage.setItem(
+  "tenEnd",
+  end
+);
+
+localStorage.setItem(
+  "tenMode",
+  "true"
+);
   // =========================
   // 指定範囲を全部保存
   // =========================
@@ -2742,7 +3018,10 @@ tenButton.onclick = function() {
 
       })
       .slice(start - 1, end);
-
+localStorage.setItem(
+  "remainingRangeWords",
+  JSON.stringify(remainingRangeWords)
+);
 
   tenMode = true;
   practicingWrongWords = false;
@@ -2800,7 +3079,10 @@ function makeNextTen() {
       0,
       numberOfQuestions
     );
-
+localStorage.setItem(
+  "remainingRangeWords",
+  JSON.stringify(remainingRangeWords)
+);
 
   currentWord = 0;
 
