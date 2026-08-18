@@ -11,21 +11,30 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
   font-family: Arial, sans-serif;
   background: #f2f4f7;
-  min-height: 100vh;
 }
+
 .app {
   width: 100%;
   min-height: 100vh;
   background: white;
   padding: 50px 25px;
   text-align: center;
-  position: relative;
-  overflow: hidden;
 }
+
+/* =========================
+   共通
+========================= */
 
 h1 {
   font-size: 32px;
@@ -60,6 +69,62 @@ button {
 }
 
 /* =========================
+   問題画面
+========================= */
+
+#quizScreen {
+  width: 100%;
+  position: relative;
+}
+
+#word {
+  width: 100%;
+  height: 42vh;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+  user-select: none;
+}
+
+#word div {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+#word h2 {
+  font-size: 48px;
+  line-height: 1.2;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+#quizScreen button {
+  position: relative;
+  z-index: 10;
+}
+
+/* =========================
+   苦手ボタン
+========================= */
+
+#difficultButton {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: auto;
+  padding: 5px 8px;
+  margin: 0;
+  font-size: 24px;
+  background: transparent;
+  z-index: 20;
+}
+
+/* =========================
    単語一覧
 ========================= */
 
@@ -78,8 +143,6 @@ button {
   flex-shrink: 0;
   text-align: center;
 }
-
-/* 単語一覧・苦手単語一覧 */
 
 #wordList span:nth-of-type(2) {
   width: 170px;
@@ -121,70 +184,6 @@ button {
 
 #wordList hr {
   display: none;
-}
-
-/* =========================
-   苦手マーク
-========================= */
-
-#difficultButton {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  width: auto;
-  padding: 5px 8px;
-  margin: 0;
-  font-size: 24px;
-  background: transparent;
-  z-index: 20;
-}
-
-/* =========================
-   問題画面
-========================= */
-
-#quizScreen {
-  width: 100%;
-  height: calc(100vh - 100px);
-  position: relative;
-  overflow: hidden;
-}
-
-#word {
-  width: 100%;
-  height: 42vh;
-  min-height: 0;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-}
-
-#word div {
-  font-size: 20px;
-  margin-bottom: 15px;
-}
-
-#word h2 {
-  font-size: 48px;
-  line-height: 1.2;
-  margin: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-/* =========================
-   問題画面のボタン
-========================= */
-
-#quizScreen button {
-  position: relative;
-  z-index: 10;
 }
 </style>
 </head>
